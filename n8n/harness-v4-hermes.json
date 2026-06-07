@@ -1,0 +1,177 @@
+{
+  "name": "Hermes Agent Harness v4 - 백석대 특수체육",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ],
+      "id": "trigger-001",
+      "notes": "매일 오전 10시 자동 실행"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8765/api/chat",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "message": "학회지 투고 전 검증 시작. papers 폴더의 PDF 4편을 workers=4로 병렬 검증해줘",
+          "tools": true,
+          "skill": "special-pe-verifier"
+        }
+      },
+      "name": "Hermes API Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ],
+      "id": "hermes-001"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8765/api/batch",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "skill": "special-pe-verifier",
+          "input_path": "./papers/*.pdf",
+          "workers": 4,
+          "output_path": "./verified/"
+        }
+      },
+      "name": "Parallel Batch Verify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        300
+      ],
+      "id": "batch-001",
+      "notes": "workers=4 병렬 처리"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "calendar": {
+          "mode": "id",
+          "value": "primary"
+        },
+        "start": "={{ $now.setHour(10).toISO() }}",
+        "end": "={{ $now.setHour(11).toISO() }}",
+        "summary": "Hermes Agent 일일 검증 완료",
+        "description": "={{ JSON.stringify($json.result, null, 2) }}"
+      },
+      "name": "Google Calendar Log",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        900,
+        300
+      ],
+      "id": "calendar-001"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ]
+        }
+      },
+      "name": "Check Result",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        300
+      ],
+      "id": "check-001"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Hermes API Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hermes API Call": {
+      "main": [
+        [
+          {
+            "node": "Parallel Batch Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parallel Batch Verify": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar Log": {
+      "main": [
+        [
+          {
+            "node": "Check Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "version": "4.0",
+    "description": "Hermes Agent 병렬 처리 파이프라인 - 백석대 특수체육",
+    "n8nVersion": "1.x",
+    "cronSchedule": "0 10 * * * (매일 오전 10시)",
+    "hermesApiPort": 8765,
+    "workers": 4
+  }
+}
