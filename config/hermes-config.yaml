@@ -1,0 +1,69 @@
+# Hermes Agent v0.15.2 설정 파일
+# 백석대 특수체육 자동화 패키지
+# 위치: ~/.hermes/config.yaml
+
+agent:
+  name: "Hermes-BaekseokPE"
+  version: "0.15.2"
+  model: "NousResearch/Hermes-3-Llama-3.1-8B"
+  temperature: 0.1
+  max_tokens: 4096
+
+# 병렬 처리 설정
+parallel:
+  workers: 4
+  batch_size: 10
+  timeout: 120
+
+# MCP 도구 연결 (7개)
+mcp:
+  tools:
+    - name: "google-drive"
+      enabled: true
+      scope: "논문_투고전검토"
+      
+    - name: "pubmed"
+      enabled: true
+      channels: 3  # 병렬 검색 채널
+      
+    - name: "n8n-webhook"
+      enabled: true
+      url: "https://aigw2026.app.n8n.cloud"
+      port: 8765
+      
+    - name: "google-calendar"
+      enabled: true
+      account: "aigw2026@gmail.com"
+      schedule: "0 10 * * *"  # 매일 오전 10시
+      
+    - name: "github"
+      enabled: true
+      repo: "aigw2026-cpu/hermes-agent-baekseok-pe"
+      
+    - name: "memory"
+      enabled: true
+      persist: true
+      path: "~/.hermes/memory"
+      
+    - name: "filesystem"
+      enabled: true
+      allowed_paths:
+        - "~/Documents"
+        - "~/Downloads"
+        - "/tmp/hermes"
+
+# API 서버
+api:
+  port: 8765
+  host: "localhost"
+  auth: false
+
+# 스킬 디렉토리
+skills:
+  path: "~/.hermes/skills"
+  auto_load: true
+
+# 로깅
+logging:
+  level: "INFO"
+  file: "~/.hermes/logs/hermes.log"
