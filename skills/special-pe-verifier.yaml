@@ -1,0 +1,63 @@
+# 특수체육 학회지 논문 검증 스킬
+# Hermes Agent Skill v1.0
+# 한국특수체육학회지 기준 자동 검증
+
+name: "special-pe-verifier"
+version: "1.0"
+description: "특수체육 학술논문 투고 전 자동 검증 스킬"
+
+# 검증 항목
+checks:
+  # 1. 통계 용어 검증
+  statistics:
+    required_terms:
+      - "효과크기"
+      - "Hedges' g"
+      - "신뢰구간"
+      - "이분산"
+    p_value_threshold: 0.05
+    effect_size_thresholds:
+      small: 0.2
+      medium: 0.5
+      large: 0.8
+    
+  # 2. SEM 검증
+  structural_equation:
+    required_indices:
+      - "CFI"     # >= 0.90
+      - "RMSEA"   # <= 0.08
+      - "SRMR"    # <= 0.08
+      - "TLI"     # >= 0.90
+    cfi_threshold: 0.90
+    rmsea_threshold: 0.08
+    
+  # 3. PRISMA 체크리스트 (메타분석)
+  prisma:
+    required_items:
+      - "검색 전략"
+      - "선정/제외 기준"
+      - "데이터 추출"
+      - "이질성 검증"
+      - "출판 편향"
+    
+  # 4. 학회지 형식
+  formatting:
+    abstract_max_words: 250
+    keywords_count: 5
+    reference_style: "APA 7th"
+    language: "Korean+English"
+
+# 병렬 처리 설정
+parallel:
+  enabled: true
+  max_papers: 4
+  timeout_per_paper: 60
+
+# 출력 형식
+output:
+  format: "markdown"
+  include_suggestions: true
+  severity_levels:
+    - "ERROR"    # 반드시 수정
+    - "WARNING"  # 권장 수정
+    - "INFO"     # 참고사항
